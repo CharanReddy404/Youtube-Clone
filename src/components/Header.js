@@ -1,7 +1,33 @@
 import { useDispatch } from 'react-redux';
 import { toggleMenu } from '../utils/appSlice';
+import { useEffect, useState } from 'react';
+import { YOUTUBE_SEARCH_API } from '../utils/constants';
 
 const Header = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [suggestions, setSuggestions] = useState([]);
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    const searchTimmer = setTimeout(() => {
+      getSearchSuggestions();
+    }, 200);
+
+    return () => {
+      clearTimeout(searchTimmer);
+    };
+  }, [searchQuery]);
+
+  const getSearchSuggestions = async () => {
+    const data = await fetch(YOUTUBE_SEARCH_API + searchQuery).then((res) =>
+      res.json()
+    );
+    console.log(data[1]);
+    setSuggestions(data[1]);
+  };
+
   const dispatch = useDispatch();
 
   const toggleMenuHandler = () => {
@@ -26,14 +52,40 @@ const Header = () => {
         </a>
       </div>
       <div className='col-span-10 pl-28'>
-        <input
-          className='w-1/2 border border-gray-400 rounded-l-full p-2'
-          type='text'
-          placeholder='  Search'
-        />
-        <button className='border border-gray-400 rounded-r-full p-2'>
-          Search
-        </button>
+        <div>
+          <input
+            className='px-5 w-1/2 border border-gray-400 rounded-l-full p-2'
+            type='text'
+            placeholder='Search'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setShowSuggestions(false)}
+          />
+          <button className='border border-gray-400 rounded-r-full p-2'>
+            Search
+          </button>
+        </div>
+        {showSuggestions && suggestions.length > 0 && (
+          <div className='absolute bg-white py-2 px-5 shadow-lg rounded-lg border border-gray-100'>
+            <ul className='w-auto'>
+              {suggestions.map((v, i) => (
+                <li
+                  key={i}
+                  className='py-2 shadow-sm hover:bg-gray-100 cursor-pointer'
+                  value={v}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('click');
+                    setSearchQuery(v);
+                  }}
+                >
+                  {v}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
       <div className='col-span-1'>
         <img
