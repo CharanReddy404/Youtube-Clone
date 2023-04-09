@@ -1,18 +1,25 @@
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleMenu } from '../utils/appSlice';
 import { useEffect, useState } from 'react';
 import { YOUTUBE_SEARCH_API } from '../utils/constants';
+import { cacheResults } from '../utils/searchSlice';
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
-
   const [suggestions, setSuggestions] = useState([]);
-
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const searchCache = useSelector((store) => store.search);
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const searchTimmer = setTimeout(() => {
-      getSearchSuggestions();
+      if (searchCache[searchQuery]) {
+        setSuggestions(searchCache[searchQuery]);
+      } else {
+        getSearchSuggestions();
+      }
     }, 200);
 
     return () => {
@@ -26,12 +33,16 @@ const Header = () => {
     );
     console.log(data[1]);
     setSuggestions(data[1]);
+    dispatch(cacheResults({ [searchQuery]: data[1] }));
   };
-
-  const dispatch = useDispatch();
 
   const toggleMenuHandler = () => {
     dispatch(toggleMenu());
+  };
+
+  const onClickLI = (e) => {
+    e.stopPropagation();
+    console.log('click');
   };
 
   return (
@@ -74,11 +85,7 @@ const Header = () => {
                   key={i}
                   className='py-2 shadow-sm hover:bg-gray-100 cursor-pointer'
                   value={v}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log('click');
-                    setSearchQuery(v);
-                  }}
+                  onClick={onClickLI}
                 >
                   {v}
                 </li>
